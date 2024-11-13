@@ -16,7 +16,7 @@ metrics = ['Temp', 'Humid', 'PH', 'EC', 'N', 'P', 'K', 'Latitude', 'Longitude', 
 
 def read_and_process_data():
     # Specify the directory containing the CSV files
-    data_dir = 'PATH'  # Replace with your directory
+    data_dir = '/Users/jflyn/Documents/projects/DRIVEsoilDisplay/MeasurementCSVs'  # Replace with your directory
     csv_files = glob.glob(os.path.join(data_dir, '*.csv'))
 
     # Initialize a list to hold DataFrames
@@ -56,32 +56,95 @@ def generate_statistics(df):
     stats_df = grouped[metrics].agg(['mean']).reset_index()
     stats_df.columns = [' '.join(col).strip() if col[1] else col[0] for col in stats_df.columns.values]
     return stats_df
-
+ 
 def create_time_series(df, metric):
+    import plotly.graph_objects as go
+
     # Filter data
-    plot_df = df.dropna(subset=[metric, 'Timestamp', 'SensorID', 'soil_type'])
+    plot_df = df.dropna(subset=[metric, 'Timestamp', 'SensorID', 'soil_type']).copy()
     plot_df = plot_df.sort_values('Timestamp')
-    
+
     # Convert Timestamp to seconds
     plot_df['TimeSeconds'] = plot_df['Timestamp'] / 1000
 
-    fig = px.line(
-        plot_df,
-        x='TimeSeconds',  # Use the new TimeSeconds column
-        y=metric,
-        color='soil_type',
-        line_dash='SensorID',
-        markers=True,
-        title=f'{metric} over Time'
-    )
-    # Remove individual figure's layout titles
+    # Ensure SensorID is a string
+    plot_df['SensorID'] = plot_df['SensorID'].astype(str)
+
+    # Get unique soil_types and SensorIDs
+    soil_types = plot_df['soil_type'].unique()
+    sensor_ids = plot_df['SensorID'].unique()
+
+    # Assign colors to soil_types
+    color_map = px.colors.qualitative.Plotly
+    soil_type_colors = {soil: color_map[i % len(color_map)] for i, soil in enumerate(soil_types)}
+
+    # Assign symbols to SensorIDs
+    symbol_list = ['circle', 'square', 'diamond', 'cross', 'x', 'triangle-up', 'triangle-down', 'star']
+    sensor_symbols = {sensor: symbol_list[i % len(symbol_list)] for i, sensor in enumerate(sensor_ids)}
+
+    # Create the figure
+    fig = go.Figure()
+
+    # Add dummy traces for the soil_type legend
+    for soil in soil_types:
+        fig.add_trace(go.Scatter(
+            x=[None],
+            y=[None],
+            mode='markers',
+            marker=dict(
+                color=soil_type_colors[soil]
+            ),
+            legendgroup='Soil Type',
+            legendgrouptitle_text='Soil Type',
+            showlegend=True,
+            name=soil
+        ))
+
+    # Add dummy traces for the SensorID legend
+    for sensor in sensor_ids:
+        fig.add_trace(go.Scatter(
+            x=[None],
+            y=[None],
+            mode='markers',
+            marker=dict(
+                color='black',
+                symbol=sensor_symbols[sensor]
+            ),
+            legendgroup='Sensor ID',
+            legendgrouptitle_text='Sensor ID',
+            showlegend=True,
+            name=f'Sensor {sensor}'
+        ))
+
+    # Now, add the actual data traces
+    # Group the data by soil_type and SensorID
+    grouped = plot_df.groupby(['soil_type', 'SensorID'])
+
+    for (soil, sensor), group in grouped:
+        fig.add_trace(go.Scatter(
+            x=group['TimeSeconds'],
+            y=group[metric],
+            mode='lines+markers',
+            marker=dict(
+                color=soil_type_colors[soil],
+                symbol=sensor_symbols[sensor]
+            ),
+            line=dict(color=soil_type_colors[soil]),
+            legendgroup='Data',
+            showlegend=False  # Do not show in legend to avoid clutter
+        ))
+
+    # Update layout
     fig.update_layout(
         xaxis_title='Time (seconds)',
         yaxis_title=metric,
-        legend_title_text='Soil Type',
-        title=''
+        title=f'{metric} over Time',
+        legend_title_text='',  # We have custom legend group titles
     )
+
     return fig
+
+
 
 def create_boxplot(df, metric, soil_types):
     # Filter data
