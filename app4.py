@@ -19,8 +19,8 @@ df_combined['soil_type'] = df_combined['soil_type'].astype(str)
 # Replace NaNs with -1
 df_combined.fillna(-1, inplace=True)
 
-# Desired SensorIDs order
-desired_sensor_ids = ['Lab(Value)', '1', '2', '3', '4', 'phProbe']
+# Desired SensorIDs order, including 'Lab(Rating)'
+desired_sensor_ids = ['Lab(Rating)', 'Lab(Value)', '1', '2', '3', '4', 'phProbe']
 
 app = dash.Dash(__name__)
 
@@ -62,31 +62,46 @@ def update_graph(selected_parameter):
     # Reindex the rows to match desired SensorID order
     df_pivot = df_pivot.reindex(desired_sensor_ids)
 
-    # Get Lab(Value) per soil_type
-    lab_values = df_pivot.loc['Lab(Value)'].dropna()
+    # Get all soil types
+    all_soil_types = df_pivot.columns
 
-    # Sort soil_types based on Lab(Value) for the selected parameter
-    lab_values_sorted = lab_values.sort_values()
-    ordered_soil_types = lab_values_sorted.index.tolist()
+    # Get Lab(Rating) and Lab(Value) per soil_type
+    lab_rating = df_pivot.loc['Lab(Rating)']
+    lab_values = df_pivot.loc['Lab(Value)']
 
-    # Reindex the columns (soil_types) based on sorted Lab(Value)
+    # Ensure Lab(Rating) and Lab(Value) are numeric
+    lab_rating_numeric = pd.to_numeric(lab_rating, errors='coerce')
+    lab_values_numeric = pd.to_numeric(lab_values, errors='coerce')
+
+    # Create a DataFrame for sorting, include all soil_types
+    lab_df = pd.DataFrame({
+        'Lab_Rating': lab_rating_numeric,
+        'Lab_Value': lab_values_numeric
+    }, index=all_soil_types)
+
+    # Sort soil_types based on Lab_Rating and Lab_Value, NaNs are placed at the end
+    lab_df_sorted = lab_df.sort_values(by=['Lab_Rating', 'Lab_Value'], na_position='last')
+
+    # Get the ordered list of soil_types
+    ordered_soil_types = lab_df_sorted.index.tolist()
+
+    # Reindex the columns (soil_types) based on sorted Lab(Rating) and Lab(Value)
     df_pivot = df_pivot[ordered_soil_types]
 
     # Normalize data per row
-    df_normalized = df_pivot.apply(lambda x: (x - x.min()) / (x.max() - x.min()), axis=1)
+    def normalize_row(x):
+        min_val = x.min()
+        max_val = x.max()
+        if pd.isnull(min_val) or pd.isnull(max_val) or min_val == max_val:
+            return x * np.nan  # Return NaN if min and max are NaN or equal
+        else:
+            return (x - min_val) / (max_val - min_val)
+
+    df_normalized = df_pivot.apply(normalize_row, axis=1)
 
     # Prepare text data
     text_data = df_pivot.values.copy()
     text_data = np.where(np.isnan(text_data), '', np.round(text_data, 2).astype(str))
-
-
-    # Now, for the 'Lab(Value)' row, replace the text with Lab_Rating and Lab_Value
-    lab_value_index = df_pivot.index.get_loc('Lab(Value)')
-    for i, soil_type in enumerate(ordered_soil_types):
-        rating = df_combined[(df_combined['SensorID'] == 'Lab(Rating)')&(df_combined['soil_type'] == soil_type)].reset_index(drop=True).loc[0, selected_parameter]
-        rating = int(rating)
-        value = text_data[lab_value_index, i]
-        text_data[lab_value_index, i] = f"{rating}, {value}"
 
     # Create the heatmap
     fig = go.Figure(data=go.Heatmap(
