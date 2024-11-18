@@ -17,6 +17,7 @@ df2_common = df2[common_columns]
 
 # Combine the two DataFrames (e.g., concatenation)
 combined_df = pd.concat([df1_common, df2_common], ignore_index=True)
+combined_df = combined_df.loc[combined_df['soil_type'].isin(df2['soil_type'].unique())]
 
 # Save the combined DataFrame to a new CSV
 output_path = "combined.csv"  # Specify your output file path

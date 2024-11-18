@@ -104,6 +104,14 @@ mean_df = mean_df.sort_index(axis=1)
 mean_filename = 'means_summary.csv'
 mean_df.to_csv(os.path.join(output_dir, mean_filename), index=False)
 
+
+# same thing but for mediasn 
+median_df = combined_df.groupby(['soil_type', 'SensorID'])[metrics].median().reset_index()
+median_df = median_df.sort_index(axis=1)
+median_filename = 'means_summary.csv'
+median_df.to_csv(os.path.join(output_dir, median_filename), index=False)
+
+
 # Define plotting functions
 def plot_time_series(combined_df, output_dir):
     metrics = ['Temp', 'Humid', 'PH', 'EC', 'N', 'P', 'K', 'Latitude', 'Longitude', 'Satellites', 'HDOP']

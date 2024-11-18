@@ -1,5 +1,4 @@
 import dash
-from dash import dcc, html
 from dash.dependencies import Input, Output, State
 import pandas as pd
 import numpy as np
@@ -8,8 +7,16 @@ import glob
 import plotly.express as px
 from plotly.subplots import make_subplots
 
+from dash import dcc, html, Input, Output, State, dash_table
+import pandas as pd
+import numpy as np
+import plotly.express as px
+
+
 app = dash.Dash(__name__)
 server = app.server
+
+pd.set_option('future.no_silent_downcasting', True)
 
 # Define global variables
 metrics = ['Temp', 'Humid', 'PH', 'EC', 'N', 'P', 'K', 'Latitude', 'Longitude', 'Satellites', 'HDOP']
@@ -199,6 +206,12 @@ def create_mean_barplot(stats_df, metric, soil_types):
     )
     return fig
 
+# Assuming `read_and_process_data()` and other existing functions are unchanged
+
+# Add metrics for the new visualization
+additional_metrics = ['PH', 'N', 'P', 'K', 'EC']
+
+# Extend layout
 app.layout = html.Div([
     html.Div(
         html.H1(
@@ -215,7 +228,7 @@ app.layout = html.Div([
             'borderBottom': '2px solid #e0e0e0'
         }
     ),
-    # Current Metric Display and Buttons
+    # Existing metric display and buttons
     html.Div([
         html.H2(id='current-metric', style={'textAlign': 'center', 'marginTop': '20px'}),
         html.Div([
@@ -241,112 +254,81 @@ app.layout = html.Div([
         ], style={'textAlign': 'center', 'marginBottom': '20px'}),
     ], style={'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center'}),
     dcc.Graph(id='main-graph'),
-    # Dropdown Menu for Metric Selection
     html.Div([
+        html.Label("Select Metric for 2D Table:"),
         dcc.Dropdown(
-            id='metric-dropdown',
-            options=[{'label': m, 'value': idx} for idx, m in enumerate(metrics)],
-            value=0,
-            clearable=False,
-            style={'width': '50%', 'margin': '0 auto'}
+            id='table-metric-dropdown',
+            options=[{'label': m, 'value': m} for m in additional_metrics],
+            value=additional_metrics[0],
+            style={'width': '50%', 'margin': '10px auto'}
         )
-    ], style={'padding': '20px'}),
-    dcc.Interval(
-        id='interval-component',
-        interval=5*1000,  # Update every 5 seconds
-        n_intervals=0
-    ),
-    dcc.Store(id='metric-index', data=0)  # Store the current metric index
+    ], style={'textAlign': 'center'}),
+    html.Div(id='metric-table-container', style={'margin': '20px'})
 ])
 
+# Callback for 2D table visualization
 @app.callback(
-    Output('metric-index', 'data'),
-    [Input('prev-button', 'n_clicks'),
-     Input('next-button', 'n_clicks'),
-     Input('metric-dropdown', 'value')],
-    [State('metric-index', 'data')]
+    Output('metric-table-container', 'children'),
+    [Input('table-metric-dropdown', 'value')]
 )
-
-
-def update_metric_index(prev_clicks, next_clicks, dropdown_value, current_index):
-    ctx = dash.callback_context
-
-    if not ctx.triggered:
-        return current_index
-    else:
-        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-
-    if button_id == 'prev-button':
-        current_index = (current_index - 1) % len(metrics)
-    elif button_id == 'next-button':
-        current_index = (current_index + 1) % len(metrics)
-    elif button_id == 'metric-dropdown':
-        current_index = dropdown_value
-
-    return current_index
-
-# Synchronize the dropdown with the current metric index
-@app.callback(
-    Output('metric-dropdown', 'value'),
-    [Input('metric-index', 'data')]
-)
-def update_dropdown(metric_index):
-    return metric_index
-
-@app.callback(
-    Output('current-metric', 'children'),
-    [Input('metric-index', 'data')]
-)
-def update_current_metric(metric_index):
-    metric = metrics[metric_index]
-    return f"Current Metric: {metric}"
-
-@app.callback(
-    Output('main-graph', 'figure'),
-    [Input('interval-component', 'n_intervals'),
-     Input('metric-index', 'data')]
-)
-def update_graph(n_intervals, metric_index):
+def update_table(selected_metric):
+    # Read the data
     df = read_and_process_data()
-    stats_df = generate_statistics(df)
-    metric = metrics[metric_index]
+    
+    # Pivot the data to create a 2D table
+    pivot_df = df.pivot(index='SensorID', columns='soil_type', values=selected_metric)
+    
+    # Sort the columns based on the "Lab(Value)" row
+    lab_values = df[df['SensorID'] == 'Lab(Value)'].set_index('soil_type')[selected_metric]
+    sorted_columns = lab_values.sort_values().index
+    pivot_df = pivot_df[sorted_columns]
+    
+    # Color map for the "Lab(Rating)" row
+    lab_ratings = df[df['SensorID'] == 'Lab(Rating)'].set_index('soil_type')[selected_metric]
+    rating_colors = lab_ratings.map({
+        'vL': 'lightblue',  # Very Low
+        'L': 'blue',        # Low
+        'M': 'green',       # Medium
+        'H': 'yellow',      # High
+        'vH': 'red',        # Very High
+        np.nan: 'gray'      # NaN
+    })
+    
+    # Apply heatmap coloring for sensor rows
+    def color_scale(row):
+        min_val, max_val = row.min(), row.max()
+        return row.apply(
+            lambda x: f'rgba(255, 0, 0, {((x - min_val) / (max_val - min_val)) if pd.notna(x) else 0.1})'
+        )
 
-    # Get the list of soil_types in sorted order
-    soil_types = sorted(df['soil_type'].unique())
-
-    # Create a subplot with all three plots
-    fig = make_subplots(rows=1, cols=3, subplot_titles=("Time Series", "Boxplot", "Mean Value"))
-
-    # Time Series
-    time_series_fig = create_time_series(df, metric)
-    for trace in time_series_fig['data']:
-        fig.add_trace(trace, row=1, col=1)
-    fig.update_xaxes(title_text='Time (seconds)', row=1, col=1)
-    fig.update_yaxes(title_text=metric, row=1, col=1)
-
-    # Boxplot
-    boxplot_fig = create_boxplot(df, metric, soil_types)
-    for trace in boxplot_fig['data']:
-        fig.add_trace(trace, row=1, col=2)
-    fig.update_xaxes(title_text='Soil Type', row=1, col=2)
-    fig.update_yaxes(title_text=metric, row=1, col=2)
-
-    # Mean Barplot
-    mean_barplot_fig = create_mean_barplot(stats_df, metric, soil_types)
-    for trace in mean_barplot_fig['data']:
-        fig.add_trace(trace, row=1, col=3)
-    fig.update_xaxes(title_text='Soil Type', row=1, col=3)
-    fig.update_yaxes(title_text=f'Mean {metric}', row=1, col=3)
-
-    fig.update_layout(
-        height=600,
-        width=1800,
-        title_text=f"Visualization for {metric}",
-        showlegend=True,
-        legend_title_text='Legend',
-        legend=dict(x=1.05, y=1)
+    row_styles = pivot_df.apply(color_scale, axis=1)
+    
+    # Create the table with style
+    table_data = pivot_df.reset_index()
+    table = dash_table.DataTable(
+        data=table_data.to_dict('records'),
+        columns=[{'name': col, 'id': col} for col in table_data.columns],
+        style_data_conditional=[
+            # Style the "Lab(Value)" row
+            *[
+                {
+                    'if': {'filter_query': f'{{SensorID}} = "Lab(Value)"', 'column_id': soil},
+                    'backgroundColor': rating_colors[soil],
+                    'color': 'black'
+                } for soil in rating_colors.index
+            ],
+            # Style the other rows with heatmap
+            *[
+                {
+                    'if': {'filter_query': f'{{SensorID}} = {sensor}', 'column_id': soil},
+                    'backgroundColor': row_styles.loc[sensor, soil],
+                    'color': 'black'
+                } for sensor in row_styles.index for soil in row_styles.columns
+            ]
+        ]
     )
-    return fig
+
+    return table
 
 if __name__ == '__main__':
     app.run_server(debug=True)
