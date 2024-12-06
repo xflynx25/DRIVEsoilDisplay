@@ -18,7 +18,7 @@ plots_to_generate = [4]#[1, 3, 4]  # Replace with the plot numbers you want
 #}
 
 # Define your data directory
-data_dir = '/Users/jflyn/Documents/projects/DRIVEsoilDisplay/MeasurementCSVs'
+data_dir = 'ActiveExperiment'
 
 # Output directory setup
 output_dir = f'{data_dir}/outputs'     # Directory to save the outputs

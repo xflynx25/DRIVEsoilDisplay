@@ -1,0 +1,1 @@
+copy the files from some experiment in FullDataArchive --> this folder (MeasurementCSVs), and the scripts will automatically work to produce appropriate plots, and synthesized datasets for visualization in the app or with ML. 

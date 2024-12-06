@@ -1,8 +1,8 @@
 import pandas as pd
 
 # Load the CSV files
-csv1_path = '/Users/jflyn/Documents/projects/DRIVEsoilDisplay/MeasurementCSVs/outputs/means_summary.csv'
-csv2_path = '/Users/jflyn/Documents/projects/DRIVEsoilDisplay/input_data.csv'
+csv1_path = 'ActiveExperiment/outputs/means_summary.csv'
+csv2_path = 'input_data.csv'
 
 # Read the CSVs into DataFrames
 df1 = pd.read_csv(csv1_path)

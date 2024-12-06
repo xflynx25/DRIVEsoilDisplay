@@ -2,9 +2,9 @@
 import pandas as pd
 
 # Load the CSV files
-csv1a_path = '/Users/jflyn/Documents/projects/DRIVEsoilDisplay/MeasurementCSVs/outputs/means_summary.csv' # our auto-csv collected
-csv1b_path = '/Users/jflyn/Documents/projects/DRIVEsoilDisplay/input_variable_data.csv' #our manual writing collected
-csv2_path = '/Users/jflyn/Documents/projects/DRIVEsoilDisplay/input_data.csv' # lab info
+csv1a_path = 'ActiveExperiment/outputs/means_summary.csv' # our auto-csv collected
+csv1b_path = 'input_measured_data.csv' # our manual writing collected
+csv2_path = 'input_data_source.csv' # lab info
 
 # Read the CSVs into DataFrames
 df1a = pd.read_csv(csv1a_path)
@@ -15,14 +15,14 @@ df2['soil_type'] = df2['soil_type'].astype(str)
 # combine the autocollected and manual entry variable data 
 df1 = pd.concat([df1a, df1b], axis=0) # will have nans but no worry
 
-print(df1)
-
 # Split df1 into non-flood and flood data
 df1_non_flood = df1[~df1['soil_type'].str.endswith('_flood')]
 df1_flood = df1[df1['soil_type'].str.endswith('_flood')]
 
 # Remove '_flood' from soil_type in df1_flood to match df2
-df1_flood['soil_type'] = df1_flood['soil_type'].str.replace('_flood', '', regex=False)
+#df1_flood['soil_type'] = df1_flood['soil_type'].str.replace('_flood', '', regex=False)
+df1_flood.loc[:, 'soil_type'] = df1_flood['soil_type'].str.replace('_flood', '', regex=False)
+
 
 # Function to process and save DataFrames
 def process_and_save(df1_part, output_path):

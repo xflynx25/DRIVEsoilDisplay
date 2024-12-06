@@ -1,0 +1,17 @@
+Timestamp,SensorID,Temp,Humid,PH,EC,N,P,K,DateTime,Latitude,Longitude,Satellites,HDOP
+49585,1,192,202,573,87,9,12,32,Invalid,Invalid,Invalid,0,0
+52101,1,192,202,545,88,9,12,32,Invalid,Invalid,Invalid,0,0
+54101,1,192,202,545,88,9,12,33,Invalid,Invalid,Invalid,0,0
+56595,1,192,203,522,89,9,12,32,Invalid,Invalid,Invalid,0,0
+58595,1,192,203,522,89,9,12,33,Invalid,Invalid,Invalid,0,0
+61103,1,192,202,522,89,9,12,33,Invalid,Invalid,Invalid,0,0
+97287,2,163,286,774,0,0,0,0,Invalid,Invalid,Invalid,0,0
+99792,2,163,285,767,0,0,0,0,Invalid,Invalid,Invalid,0,0
+101792,2,164,285,711,0,0,0,0,Invalid,Invalid,Invalid,0,0
+104297,2,165,287,700,0,0,0,0,Invalid,Invalid,Invalid,0,0
+107928,2,167,286,735,0,0,0,0,Invalid,Invalid,Invalid,0,0
+197316,3,166,279,768,0,0,0,0,Invalid,Invalid,Invalid,0,0
+199263,3,167,280,762,0,0,0,0,Invalid,Invalid,Invalid,0,0
+201817,3,168,280,762,0,0,0,0,Invalid,Invalid,Invalid,0,0
+203817,3,168,278,762,0,0,0,0,Invalid,Invalid,Invalid,0,0
+208080,3,168,279,762,0,0,0,0,Invalid,Invalid,Invalid,0,0

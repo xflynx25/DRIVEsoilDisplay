@@ -38,14 +38,7 @@ rating_dict = {
         (1.6, float('inf'), 'H'),
     ],
 }
-def get_rating(param, value):
-    """Returns the rating for a given parameter value."""
-    if param not in rating_dict or pd.isnull(value):
-        return ''
-    for (lower, upper, rating) in rating_dict[param]:
-        if lower <= value < upper:
-            return rating
-    return 'Unknown'
+
 def get_rating(param, value):
     """Returns the rating for a given parameter value."""
     if param not in rating_dict or pd.isnull(value):
@@ -56,8 +49,8 @@ def get_rating(param, value):
     return ''
 
 # Paths to the input and output CSV files
-input_path = 'input_data_20samples.csv'
-output_path = 'updated_input_data_20samples.csv'
+input_path = 'input_data_source.csv'
+output_path = 'input_data_source.csv'
 
 # Read the CSV file
 df = pd.read_csv(input_path, header=None)
@@ -103,7 +96,8 @@ for soil_type in soil_types:
     
     # Update the 'Lab(Rating)' row with computed ratings
     for param in params:
-        df.at[lab_rating_idx, param] = ratings[param]
+        if pd.isnull(df.at[lab_rating_idx, param]) or df.at[lab_rating_idx, param] == '': #only add if don't already have 
+            df.at[lab_rating_idx, param] = ratings[param]
 
 # Write the updated DataFrame back to the CSV file
 df.to_csv(output_path, index=False, header=False)
