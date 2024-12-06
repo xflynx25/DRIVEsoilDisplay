@@ -1,0 +1,20 @@
+name: dashproj
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - pandas
+  - matplotlib
+  - seaborn
+  - dash
+  - pip
+  - pip:
+      - dash-core-components
+      - dash-html-components
+      - dash-labs
+      - dash-table
+      - plotly
+
+prefix: /Users/jflyn/anaconda3/envs/dashproj

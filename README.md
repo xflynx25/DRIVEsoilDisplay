@@ -28,6 +28,63 @@ Interpretable visualiation of soil sensor measurements, to aid in scientific dec
     - NOTE: you can immediately jump to this step if wanting to visualize a previous experiment which has the combined files in the **CompressedData** folder. Just copy the combined*.csv files into the root directory. 
 
 
+
+## Environment
+
+### Setting Up the Environment
+
+To set up the Conda environment for this project, follow these steps:
+
+1. **Install Conda**:
+   - If you don’t have Conda installed, download it from [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://www.anaconda.com/).
+
+2. **Clone the Repository**:
+   ```bash
+   git clone <repository-url>
+   cd <repository-name>
+   ```
+
+3. **Create the Conda Environment**:
+   Run the following command to create the environment from the `environment.yml` file:
+   ```bash
+   conda env create -f environment.yml
+   ```
+
+4. **Activate the Environment**:
+   ```bash
+   conda activate my_environment
+   ```
+
+5. **Verify Installation**:
+   Ensure all required packages are installed:
+   ```bash
+   conda list
+   ```
+
+6. **Deactivating the Environment** (Optional):
+   When done working in the environment, deactivate it using:
+   ```bash
+   conda deactivate
+   ```
+
+---
+
+### Optional Step: Updating the Environment
+
+If you make changes to the environment and want to update the `environment.yml` file, re-run the export command:
+   ```bash
+   conda env export --no-builds > environment.yml
+   ```
+
+To update an existing environment from the modified `environment.yml`, use:
+   ```bash
+   conda env update -f environment.yml
+   ```
+
+
+
+
+
 ## Timeline 
 
 Oct.24 = Built breadboard prototype to measure multiple sensors simultaneously. Synthesis plots allow comparison between different trials. Simple web-app allows timeseries visualization. 
